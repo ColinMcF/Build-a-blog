@@ -1,9 +1,9 @@
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, render_template, url_for
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://build-a-blog:letsbuild@localhost:8889/build-a-blog'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://build-a-blog:letsbuild@localhost:8889/buildablog'
 app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
 
@@ -17,22 +17,20 @@ class Blog(db.Model):
         self.title = title
         self.body = body
 
+
+
 @app.route('/')
 def index():
+    blogs = Blog.query.all() 
     #needs to list all blogs from database
-    return render_template('base.html')
+    return render_template('index.html', blogs=blogs)
 
-@app.route('/blog', methods=['POST', 'GET'])
-def blog():
 
-    if request.args.get("id"):
-        blog_id = request.args.get("id")
-        blog = Blog.query.get(blog_id)
-        return render_template('displaypost.html', blog = blog)
-
-    else:
-
-        return render_template('blog.html')
+@app.route('/displaypost')
+def show():
+    displayid = request.args.get("blogid")
+    blogs = Blog.query.get(displayid)
+    return render_template('displaypost.html',blog = blogs)
 
 @app.route('/newpost', methods=['POST', 'GET'])
 def newpost(): 
@@ -42,11 +40,14 @@ def newpost():
     title = request.form['title']
     body = request.form['body']
 
+    if not (title or body):
+        return render_template('newpost.html', title = 'Please add a title', body = 'Please share your thoughts') 
+
     blog_instance = Blog(title, body)
     db.session.add(blog_instance)
     db.session.commit()
 
-    return redirect('/displaypost?id={}'.format(blog_instance.id))
+    return redirect("/")
     
 
 
